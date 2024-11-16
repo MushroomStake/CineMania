@@ -208,6 +208,7 @@ export default {
             feedback: '',
             points: 100,
             maxPoints: 100,
+            iconPath: require('@/assets/ticket.png'),
             movies: {
                 Action: [
                     { id: 1, title: 'Avengers: Endgame', genre: 'Action', date: 'December 13', time: '3:00 PM', image:  require('@/assets/venom.jpg'), description: 'A thrilling tale.', trailer: require('@/assets/garfield2.mp4') },
@@ -469,12 +470,13 @@ export default {
     }
 	
     .profile-top {
-		background-color: #444444; 
+		background-color: #2e1a17
+        ; 
 		padding: 15px; 
 		border-radius: 10px; 
 		margin: 50px auto; /* Center horizontally */
 		color: #ffffff; 
-		box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); 
+		/*box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); */
 		width: 80%; /* Define a percentage width */
 		max-width: 1500px; /* Optional: Restrict maximum width */
 		text-align: center; /* Center the text */
@@ -487,14 +489,18 @@ export default {
 	margin: 10px;
 }
 
+.profile-content h1{
+    margin-left: 10%;
+}
+
 .profile-container {
-    background-color: #444444; /* Matches the profile top background */
+    background-color: #2e1a17    ; /* Matches the profile top background */
     padding: 40px;
     margin-top: 20px;
 	margin-left: 10%;
     border-radius: 10px;
     color: #ffffff;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    /*box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); */
     width: 80%;
 	max-width: 1500px; /* Optional: Restrict maximum width */
 }
@@ -583,6 +589,7 @@ export default {
 	.searchBar input {
         padding: 10px;
         width: 20%;
+        margin-left: 5%;
         border: 2px solid #4f4f4f;
         border-radius: 5px;
         font-size: 16px;
@@ -704,6 +711,7 @@ export default {
 	
 	.shows-content h1{
 		margin-top: 50px;
+        margin-left: 5%;
 	}
 	
     .shows-movie {
