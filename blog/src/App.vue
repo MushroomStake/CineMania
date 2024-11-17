@@ -83,14 +83,6 @@
 </div>
 </div>
 
-
-
-	
-
-
-
-
-
             <!-- NOW SHOWING -->
             <div v-if="view === 'Shows'" class="shows-content">
                 <h1>Current Shows</h1>
@@ -132,45 +124,136 @@
                 </div>
             </div>
             
-            <!-- PURCHASE -->
-            <div v-if="view === 'Purchase' && selectedMovie" class="purchase-content">
-                <video autoplay muted loop>
-                    <source :src="selectedMovie.trailer" type="video/mp4">
-                </video>
-                <div class="movie-details">
-                    <img :src="selectedMovie.image" alt="Movie Poster" />
-                    <div class="purchase-details">
-                        <h2>{{ selectedMovie.title }}</h2>
-                        <p><strong>Showtime:</strong> {{ selectedMovie.date }}, {{ selectedMovie.time }}</p>
-                        <p><strong>Description:</strong> {{ selectedMovie.description }}</p>
-                        <button id="purchase-button" @click="purchaseTickets">Purchase Ticket</button>
-                    </div>
-                </div>
-                <div class="screen">Screen</div>
-                <div class="seating-chart">
-                    <div 
-                        v-for="(seat, index) in getSeats(selectedMovie.id)" 
-                        :key="index" 
-                        :class="['seat', seat.status]" 
-                        @click="toggleSeatSelection(selectedMovie.id, seat)">
-                        {{ seat.label }}
-                    </div>
-                </div>
-                <p>Selected Seats: {{ selectedSeats.join(', ') || 'None' }}</p>
-            </div>
-	<div v-if="showPopup" class="popup-overlay">
+           <!-- PURCHASE -->
+<div v-if="view === 'Purchase' && selectedMovie.title" class="purchase-content">
+    <video autoplay muted loop>
+        <source :src="selectedMovie.trailer" type="video/mp4">
+    </video>
+    <div class="movie-details">
+        <img :src="selectedMovie.image" alt="Movie Poster" />
+        <div class="purchase-details">
+            <h2>{{ selectedMovie.title }}</h2>
+            <p><strong>Showtime:</strong> {{ selectedMovie.date }}, {{ selectedMovie.time }}</p>
+            <p><strong>Description:</strong> {{ selectedMovie.description }}</p>
+            <button id="purchase-button" @click="showConfirmation">Purchase Ticket</button>
+        </div>
+    </div>
+    <div class="screen">Screen</div>
+    <div class="seating-chart">
+        <div 
+            v-for="(seat, index) in getSeats(selectedMovie.id)" 
+            :key="index" 
+            :class="['seat', seat.status]" 
+            @click="toggleSeatSelection(selectedMovie.id, seat)">
+            {{ seat.label }}
+        </div>
+    </div>
+    <p>Selected Seats: {{ selectedSeats.join(', ') || 'None' }}</p>
+</div>
+
+			
+<!-- Updated Pop-up with transition class -->
+<div v-if="showConfirmationPopup" class="popup-overlay" :class="{ 'active': showConfirmationPopup }">
     <div class="popup-box">
-        <h2>Thank You!</h2>
-        <p>Purchased successfully.</p>
-        <p><strong>Movie:</strong> {{ selectedMovie.title }}</p>
-        <p><strong>Seats:</strong></p>
-        <ul class="seat-list">
-            <li v-for="seat in purchasedSeats" :key="seat.label">{{ seat.label }}</li>
-        </ul>
-        <p><strong>Ticket Numbers:</strong> {{ ticketNumbers.join(', ') }}</p>
-        <button @click="closePopup">Close</button>
+        <h2>Are you sure you want to purchase?</h2>
+        <p><strong>Seats:</strong> {{ selectedSeats.join(', ') }}</p>
+        <p><strong>Theater Location:</strong> (To be added later)</p>
+        <p><strong>Date & Time:</strong> {{ selectedMovie.date }} - {{ selectedMovie.time }}</p>
+        <p><strong>Ticket Amount:</strong> ₱{{ totalPrice }}</p>
+        <button @click="proceedToPayment">Yes</button>
+        <button @click="cancelPurchase">No</button>
     </div>
 </div>
+
+
+    <!-- Payment Confirmation Pop-up -->
+    <div v-if="showPaymentPopup" class="popup-overlay active">
+        <div class="popup-box">
+            <h2>PAYMENT CONFIRMATION</h2>
+            <p><strong>Ticket Amount:</strong> ₱{{ totalPrice }}</p>
+            <p><strong>Amount in PHP:</strong> ₱{{ totalPriceInPHP }}</p>
+
+            <div class="payment-methods">
+                <label>
+                    <input type="radio" v-model="paymentMethod" value="Cash" /> Cash
+                </label>
+                <label>
+                    <input type="radio" v-model="paymentMethod" value="Online Payment" /> Online Payment
+                </label>
+                <label>
+                    <input type="radio" v-model="paymentMethod" value="Ticket" /> Ticket
+                </label>
+            </div>
+
+            <button @click="confirmPayment">Confirm</button>
+            <button @click="cancelPayment">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Purchased Successfully Pop-up -->
+    <div v-if="showSuccessPopup" class="popup-overlay active">
+        <div class="popup-box">
+            <h2>Thank You!</h2>
+            <p>Purchased successfully.</p>
+            <p><strong>Movie:</strong> {{ selectedMovie.title }}</p>
+            <p><strong>Seats:</strong></p>
+            <ul class="seat-list">
+                <li v-for="seat in purchasedSeats" :key="seat">{{ seat }}</li>
+            </ul>
+            <p><strong>Ticket Numbers:</strong> {{ ticketNumbers.join(', ') }}</p>
+            <button @click="closeSuccessPopup">Close</button>
+        </div>
+    </div>
+
+
+<!-- Ticket Section -->
+<div v-if="view === 'Ticket'" class="ticket-container">
+    <h3>Your Tickets</h3>
+    <div v-if="getActiveTickets().length === 0">
+        <p>No active tickets available.</p>
+    </div>
+    <div v-else>
+        <div v-for="(ticket, index) in getActiveTickets()" 
+             :key="index" 
+             class="ticket-details">
+            <p><strong>Movie:</strong> {{ ticket.name }}</p>
+            <p><strong>Showtime:</strong> {{ ticket.showtime }}</p>
+            <p><strong>Seats:</strong> {{ ticket.seats.join(', ') }}</p>
+            <p><strong>Total Price:</strong> ₱{{ ticket.totalPrice }}</p>
+            <p><strong>Ticket Numbers:</strong> {{ ticket.ticketNumbers.join(', ') }}</p>
+        </div>
+    </div>
+
+    <!-- Booking History Button -->
+    <button @click="setView('BookingHistory')" class="booking-history-button">
+        View Booking History
+    </button>
+</div>
+
+<!-- Booking History -->
+<div v-if="view === 'BookingHistory'" class="ticket-container">
+    <h3>Expired Tickets</h3>
+    <div v-if="getExpiredTickets().length === 0">
+        <p>No expired tickets yet.</p>
+    </div>
+    <div v-else>
+        <div v-for="(ticket, index) in getExpiredTickets()" 
+             :key="index" 
+             class="ticket-details">
+            <p><strong>Movie:</strong> {{ ticket.name }}</p>
+            <p><strong>Showtime:</strong> {{ ticket.showtime }}</p>
+            <p><strong>Seats:</strong> {{ ticket.seats.join(', ') }}</p>
+            <p><strong>Total Price:</strong> ₱{{ ticket.totalPrice }}</p>
+            <p><strong>Ticket Numbers:</strong> {{ ticket.ticketNumbers.join(', ') }}</p>
+        </div>
+    </div>
+    <button @click="setView('Ticket')" class="back-to-tickets-button">
+        Back to Tickets
+    </button>
+</div>
+
+
+
 
             <!-- FEEDBACK -->
             <div v-if="view === 'Feedback'" class="feedback-content">
@@ -193,28 +276,46 @@ export default {
             sidebarActive: false,
             searchQuery: '',
             isSearching: false,
-            currentTime: '',
-			firstName: 'John', // Sample data
+            currentTime: '', // This will hold the time
+            firstName: 'John', // Sample data
             lastName: 'Doe', // Sample data
             email: 'johndoe@example.com', // Sample data
             birthdate: '', // Inputable
             contactNo: '', // Inputable
-            selectedMovie: null,
             seats: [],
-			showPopup: false,
-			ticketNumbers: [], // To store generated ticket numbers
-			selectedSeats: [],
             filteredMoviesList: [],
             feedback: '',
             points: 100,
             maxPoints: 100,
+            movieDetails: { name: '', showtime: '' },
+            purchasedTickets: [], // Store all purchased tickets
+
+            showPopup: false, 
+            showConfirmationPopup: false,
+            showPaymentPopup: false,
+            showSuccessPopup: false,
+
+            // Movie, seat and payment information
+            selectedSeats: [],
+            totalPrice: 20,  // Sample price (in PHP)
+            paymentMethod: '',  // Holds the selected payment method
+            purchasedSeats: [],
+            ticketNumbers: [],
+			expiredTickets: [],
+            selectedMovie: {
+                title: '', // Ensure movie title is initialized
+                date: '',
+                time: ''
+            },
+            // Theater location and other placeholders for now
+            theaterLocation: '(To be added later)',  // Placeholder for theater location
             movies: {
                 Action: [
-                    { id: 1, title: 'Avengers: Endgame', genre: 'Action', date: 'December 13', time: '3:00 PM', image:  require('@/assets/venom.jpg'), description: 'A thrilling tale.', trailer: require('@/assets/garfield2.mp4') },
-                    { id: 2, title: 'Inception', genre: 'Action', date: 'December 13', time: '7:00 PM', image: 'inception.jpg', description: 'A mind-bending thriller.' },
+                    { id: 1, title: 'Venom', genre: 'Action', date: 'November 13', time: '3:00 PM', image:  require('@/assets/venom.jpg'), description: 'A thrilling tale.', trailer: require('@/assets/garfield2.mp4') },
+                    { id: 2, title: 'Uprising', genre: 'Action', date: 'December 13', time: '7:00 PM', image: require('@/assets/uprising.jpg'), description: 'A mind-bending thriller.' },
                     { id: 3, title: 'The Dark Knight', genre: 'Action', date: 'December 13', time: '12:00 PM', image: 'darkknight.jpg', description: 'A dark tale.' },
                     { id: 4, title: 'Guardians of the Galaxy', genre: 'Action', date: 'December 13', time: '8:30 PM', image: 'guardians.jpg', description: 'A space adventure.' },
-                    { id: 5, title: 'Uprising', genre: 'Action', time: '8:30 PM', image: 'uprising.jpg', description: 'A heroic tale.' }
+                    { id: 5, title: 'Inception', genre: 'Action', time: '8:30 PM', image: 'uprising.jpg', description: 'A heroic tale.' }
                 ],
                 Drama: [
                     { id: 6, title: 'The Shawshank Redemption', genre: 'Drama', date: 'December 13', time: '5:00 PM', image: 'shawshank.jpg', description: 'A story of hope.' },
@@ -244,8 +345,23 @@ export default {
                         { label: 'A9', status: 'available' },
                         { label: 'A10', status: 'available' },
                     ]
-                }
+                },
+				2: {  // Movie ID 2 (Uprising)
+					rows: ['A', 'B', 'C', 'D', 'E'],
+					seats: [
+						{ label: 'A1', status: 'available' },
+						{ label: 'A2', status: 'available' },
+						{ label: 'A3', status: 'available' },
+						{ label: 'A4', status: 'available' },
+						{ label: 'A5', status: 'available' },
+						{ label: 'A6', status: 'available' },
+						{ label: 'A7', status: 'available' },
+						{ label: 'A8', status: 'available' },
+						{ label: 'A9', status: 'available' },
+						{ label: 'A10', status: 'available' },
+                ]
             }
+            },
         };
     },
     computed: {
@@ -254,26 +370,69 @@ export default {
         },
         pointsPercentage() {
             return (this.points / this.maxPoints) * 100;
+        },
+        totalPriceInPHP() {
+            return this.totalPrice * 50;  // Example conversion rate (1 USD = 50 PHP)
         }
     },
+	
     methods: {
         toggleSidebar() {
             this.sidebarActive = !this.sidebarActive;
         },
-        setView(viewName, movie = null) {
-            this.view = viewName;
-            if (viewName === 'Purchase' && movie) {
-                this.selectedMovie = movie;
-                this.selectedSeats = []; // Reset selected seats
-                this.sidebarActive = false;
-            }
-        },
+		
+	isTicketExpired(showtime) {
+        const now = new Date();
+        // Convert "November 13, 3:00 PM" to a date object
+        const ticketDate = new Date(`${showtime}, ${now.getFullYear()}`);
+        return now > ticketDate;
+    },
+
+    getActiveTickets() {
+        return this.purchasedTickets.filter(ticket => !this.isTicketExpired(ticket.showtime));
+    },
+	
+    getExpiredTickets() {
+        return this.purchasedTickets.filter(ticket => this.isTicketExpired(ticket.showtime));
+    },
+
+    // Remove expired tickets from the active view
+    removeExpiredTickets() {
+        const now = new Date();
+        this.purchasedTickets = this.purchasedTickets.filter(ticket => {
+            const [month, day, time] = ticket.showtime.split(' ');
+            const currentYear = now.getFullYear();
+            const ticketShowtime = new Date(`${currentYear}-${month}-${day} ${time}`);
+            return now <= ticketShowtime; // Keeps only non-expired tickets
+        });
+    },
+
+setView(viewName, movie = null) {
+    this.view = viewName;
+
+    if (viewName === 'Purchase' && movie) {
+        this.selectedMovie = { ...movie };
+        this.selectedSeats = [];
+        this.sidebarActive = false;
+        this.showConfirmationPopup = false;
+    }
+
+    // Clean up any expired tickets when viewing tickets or history
+    if (viewName === 'Ticket' || viewName === 'BookingHistory') {
+        // Update expired status for all tickets
+        this.purchasedTickets.forEach(ticket => {
+            ticket.expired = this.isTicketExpired(ticket.showtime);
+        });
+    }
+},
+
         hideSidebar(event) {
             if (this.sidebarActive && !this.$el.querySelector('.sidebar').contains(event.target) && 
                 !this.$el.querySelector('.menu-btn').contains(event.target)) {
                 this.sidebarActive = false;
             }
         },
+
         handleSearch() {
             if (this.searchQuery.trim()) {
                 this.isSearching = true;
@@ -287,84 +446,165 @@ export default {
                 this.filteredMoviesList = [];
             }
         },
-		
-    saveProfile() {
-        // Correctly access birthdate and contactNo
-        alert(`Profile updated:\nBirthdate: ${this.birthdate}\nContact No.: ${this.contactNo}`);
-    },
 
-		
+        saveProfile() {
+            // Correctly access birthdate and contactNo
+            alert(`Profile updated:\nBirthdate: ${this.birthdate}\nContact No.: ${this.contactNo}`);
+        },
+
         filteredMovies(genre) {
             return this.movies[genre].filter(movie =>
                 movie.title.toLowerCase().includes(this.searchQuery.toLowerCase())
             );
         },
+
         getSeats(movieId) {
             return this.seatDatabase[movieId]?.seats || [];
         },
-        toggleSeatSelection(movieId, seat) {
-            if (seat.status === 'booked') return;
 
-            seat.status = seat.status === 'selected' ? 'available' : 'selected';
-            this.selectedSeats = this.getSeats(movieId)
-                .filter(seat => seat.status === 'selected')
-                .map(seat => seat.label);
-        },
-         purchaseTickets() {
-        if (this.selectedSeats.length > 0) {
-            // Generate ticket numbers for each selected seat
-            this.ticketNumbers = this.selectedSeats.map((seatLabel, index) => `No.${index + 1}`);
-			this.purchasedSeats = this.selectedSeats.map(seatLabel => {
-                return this.getSeats(this.selectedMovie.id).find(seat => seat.label === seatLabel);
-            });
-			
-			this.selectedSeats.forEach(seatLabel => {
-                const seat = this.getSeats(this.selectedMovie.id).find(s => s.label === seatLabel);
-                if (seat) {
-                    seat.status = 'booked';
-                }
-            });
-			
-            this.showPopup = true;
+toggleSeatSelection(movieId, seat) {
+    if (seat.status === 'booked') return; // Prevent booking already reserved seats
 
-            // Reset selected seats (optional, after modal closes)
-            this.selectedSeats = [];
-        } else {
-            alert('Please select at least one seat to purchase.');
-        }
-    },
-    closePopup() {
-        this.showPopup = false;
-        this.setView('Shows'); // Redirect to the shows view after closing the popup
-    },
-        submitFeedback() {
-            if (this.feedback) {
-                console.log('Feedback submitted:', this.feedback);
-                alert('Thank you for your feedback!');
-                this.feedback = ''; // Clear input
-            } else {
-                alert('Please enter your feedback before submitting.');
+    // Toggle seat status between 'selected' and 'available'
+    seat.status = seat.status === 'selected' ? 'available' : 'selected';
+
+    // Update the selectedSeats array
+    this.selectedSeats = this.getSeats(movieId)
+        .filter(seat => seat.status === 'selected')
+        .map(seat => seat.label);
+},
+
+
+purchaseTickets() {
+    if (this.selectedSeats.length > 0) {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+
+        // Update the showtime to include the current year
+        const movieShowtime = `${currentYear}-${this.selectedMovie.date.split(' ')[0]} ${this.selectedMovie.time}`;
+
+        const ticket = {
+            name: this.selectedMovie.title,
+            showtime: movieShowtime, // Use the updated showtime with the current year
+            seats: this.selectedSeats,
+            totalPrice: this.selectedSeats.length * 10, // Example price
+            ticketNumbers: this.selectedSeats.map((seatLabel, index) => `No.${index + 1}`)
+        };
+
+        this.purchasedTickets.push(ticket);
+        this.selectedSeats.forEach(seatLabel => {
+            const seat = this.getSeats(this.selectedMovie.id).find(s => s.label === seatLabel);
+            if (seat) {
+                seat.status = 'booked';
             }
-        },
-        updateClock() {
-            const date = new Date();
-            const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
-            const dateOptions = { month: 'long', day: 'numeric', year: 'numeric' };
-            const formattedTime = date.toLocaleTimeString([], timeOptions).replace(' ', '');
-            const formattedDate = date.toLocaleDateString([], dateOptions);
-            this.currentTime = `${formattedTime}, ${formattedDate}`;
-        }
-    },
-    mounted() {
-        this.updateClock();
-        setInterval(this.updateClock, 1000); // Update every second
-        document.addEventListener('click', this.hideSidebar);
-    },
-    beforeUnmount() {
-        document.removeEventListener('click', this.hideSidebar);
+        });
+
+        this.selectedSeats = [];
+        this.selectedMovie = { title: '', date: '', time: '' };
+        this.showConfirmationPopup = true;
+    } else {
+        alert('Please select at least one seat to purchase.');
     }
+},
+
+
+        closePopup() {
+
+            this.$nextTick(() => {
+                const popupOverlay = this.$el.querySelector('.popup-overlay');
+                const popupContent = this.$el.querySelector('.popup-box');
+
+                if (popupOverlay && popupContent) {
+                    popupOverlay.classList.remove('active');
+                    popupContent.classList.remove('active');
+                }
+
+                setTimeout(() => {
+                    this.showConfirmationPopup = false;
+                }, 300);  // Match the transition time for smooth close
+            });
+        },
+		
+	showConfirmation() {
+		if (this.selectedSeats.length === 0) {
+			alert("Please select at least one seat.");
+			return;
+    }
+		this.totalPrice = this.selectedSeats.length * 150; // Example price per seat
+		this.showConfirmationPopup = true;
+	},
+
+
+    proceedToPayment() {
+        this.showConfirmationPopup = false;
+        this.showPaymentPopup = true;
+    },
+    cancelPurchase() {
+        this.showConfirmationPopup = false;
+    },
+	
+    confirmPayment() {
+      if (!this.paymentMethod) {
+        alert('Please select a payment method.');
+        return;
+      }
+    const ticket = {
+        name: this.selectedMovie.title,
+        showtime: `${this.selectedMovie.date} ${this.selectedMovie.time}`, // Format: "November 13 3:00 PM"
+        seats: this.selectedSeats,
+        totalPrice: this.totalPrice,
+        ticketNumbers: this.selectedSeats.map((seat, index) => `T${index + 1}`)
+    };
+	
+		this.purchasedTickets.push(ticket);
+		this.selectedSeats.forEach(seatLabel => {
+        const seat = this.getSeats(this.selectedMovie.id).find(s => s.label === seatLabel);
+        if (seat) seat.status = 'booked';
+    });
+    
+    this.selectedSeats = [];
+    this.showPaymentPopup = false;
+    this.showSuccessPopup = true;
+},
+	
+    cancelPayment() {
+        this.showPaymentPopup = false;
+    },
+    closeSuccessPopup() {
+        this.showSuccessPopup = false;
+        this.setView('Home'); // Reset to home or ticket view after success
+    },
+	
+
+startClock() {
+    setInterval(() => {
+        const now = new Date();
+        const options = { 
+            month: 'long',
+            day: 'numeric', 
+			};
+        // Format the date and time without seconds
+        const dateStr = now.toLocaleDateString('en-US', options);
+        const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        
+        this.currentTime = `${dateStr}, ${timeStr}`;
+    }, 1000);
+	
+	}
+},
+
+    mounted() {
+        this.startClock();
+		window.addEventListener('click', this.hideSidebar);
+    },
+	
+	beforeUnmount() {
+    // Clean up the event listener when the component is destroyed
+    window.removeEventListener('click', this.hideSidebar);
+},
 };
 </script>
+
 
 <style>
     * {
@@ -469,12 +709,13 @@ export default {
     }
 	
     .profile-top {
-		background-color: #444444; 
+		background-color: #2e1a17
+        ; 
 		padding: 15px; 
 		border-radius: 10px; 
 		margin: 50px auto; /* Center horizontally */
 		color: #ffffff; 
-		box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); 
+		/*box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); */
 		width: 80%; /* Define a percentage width */
 		max-width: 1500px; /* Optional: Restrict maximum width */
 		text-align: center; /* Center the text */
@@ -487,14 +728,18 @@ export default {
 	margin: 10px;
 }
 
+.profile-content h1{
+    margin-left: 10%;
+}
+
 .profile-container {
-    background-color: #444444; /* Matches the profile top background */
+    background-color: #2e1a17    ; /* Matches the profile top background */
     padding: 40px;
     margin-top: 20px;
 	margin-left: 10%;
     border-radius: 10px;
     color: #ffffff;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    /*box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); */
     width: 80%;
 	max-width: 1500px; /* Optional: Restrict maximum width */
 }
@@ -583,6 +828,7 @@ export default {
 	.searchBar input {
         padding: 10px;
         width: 20%;
+        margin-left: 5%;
         border: 2px solid #4f4f4f;
         border-radius: 5px;
         font-size: 16px;
@@ -704,6 +950,7 @@ export default {
 	
 	.shows-content h1{
 		margin-top: 50px;
+        margin-left: 5%;
 	}
 	
     .shows-movie {
@@ -852,7 +1099,7 @@ export default {
             line-height: 40px;
             border-radius: 5px;
             margin-bottom: 20px;
-            z-index: 1; 
+            z-index: 0; 
         }
 
         .seating-chart {
@@ -904,64 +1151,87 @@ export default {
             background-color: rgba(255, 255, 255, 0.1);
         }
 		
-		.popup-overlay {
+/* Popup Overlay Styles */
+.popup-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+	color: black;
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease-in-out;
+	z-index: 999;
 }
 
+.popup-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Popup Box Styling */
 .popup-box {
-    background: #ffffff;
-    color: #333;
+    background: #fff;
+    padding: 30px;
     border-radius: 10px;
-    padding: 20px;
-    text-align: center;
-    max-width: 400px;
-    width: 80%;
-    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.3);
-    animation: fadeIn 0.3s ease-out;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
+/* On active popup-box should fade and slide in */
+.popup-overlay.active .popup-box {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Heading and Text Styling */
 .popup-box h2 {
     font-size: 24px;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
+    text-align: center;
 }
 
 .popup-box p {
-    margin: 10px 0;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.popup-box .seat-list {
+    list-style-type: none;
+    padding: 0;
+    font-size: 16px;
+}
+
+.popup-box .seat-list li {
+    padding-left: 10px;
 }
 
 .popup-box button {
-    background-color: #f39c12;
+    padding: 10px 20px;
+    background-color: #007bff;
     color: white;
     border: none;
-    padding: 10px 20px;
     border-radius: 5px;
+    font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    width: 100%;
+    margin-top: 20px;
 }
 
 .popup-box button:hover {
-    background-color: #e67e22;
+    background-color: #0056b3;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
+
 
 .seat-list {
     list-style: none;
@@ -980,6 +1250,70 @@ export default {
     border-radius: 5px;
     font-size: 14px;
 }
+
+
+/*TICKET*/
+.ticket-content {
+    display: none; /* Initially hidden until purchase */
+    background-color: #2e1a17;
+    padding: 15px;
+    margin-top: 20px;
+    border-radius: 10px;
+    color: white;
+    box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.3);
+	z-index: 9999;
+}
+
+.ticket-container {
+    text-align: center;
+}
+
+.ticket-container h3 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.ticket-container p {
+    font-size: 18px;
+    margin: 8px 0;
+}
+
+#ticket-confirm-btn {
+    background-color: #f39c12;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 20px;
+}
+
+#ticket-confirm-btn:hover {
+    background-color: #e67e22;
+}
+
+.booking-history-button,
+.back-to-tickets-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    font-size: 16px;
+}
+
+.booking-history-button:hover,
+.back-to-tickets-button:hover {
+    background-color: #0056b3;
+}
+
 
 
 </style>
