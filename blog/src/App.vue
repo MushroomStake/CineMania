@@ -207,20 +207,45 @@
 
 
 <!-- Ticket Section -->
-<div v-if="view === 'Ticket'" class="ticket-container">
-    <h3>Your Tickets</h3>
-    <div v-if="getActiveTickets().length === 0">
+<div v-if="view === 'Ticket'">
+
+    <div v-if="getActiveTickets().length === 0" class="ticket-container">
         <p>No active tickets available.</p>
     </div>
     <div v-else>
         <div v-for="(ticket, index) in getActiveTickets()" 
              :key="index" 
-             class="ticket-details">
-            <p><strong>Movie:</strong> {{ ticket.name }}</p>
-            <p><strong>Showtime:</strong> {{ ticket.showtime }}</p>
-            <p><strong>Seats:</strong> {{ ticket.seats.join(', ') }}</p>
-            <p><strong>Total Price:</strong> ₱{{ ticket.totalPrice }}</p>
-            <p><strong>Ticket Numbers:</strong> {{ ticket.ticketNumbers.join(', ') }}</p>
+             class="ticket">
+            <div class="ticket-content">
+                <!-- Left side: Logo -->
+                <div class="ticket-logo">
+                    <img src="@/assets/cinemania_black_logo.png" alt="Cinemania Logo" />
+                </div>
+
+                <!-- Right side: Ticket Details -->
+                <div class="ticket-details">
+                    <!-- Top Left -->
+                    <div>
+                        <p class="movie-title">{{ ticket.name }}</p>
+                        <p class="ticket-number">Ticket #: {{ ticket.ticketNumbers.join(', ') }}</p>
+                    </div>
+
+                    <!-- Top Right -->
+                    <div class="barcode"></div>
+
+                    <!-- Bottom Layout -->
+                    <div>
+                        <p class="seat-info"><strong>Seats:</strong> {{ ticket.seats.join(', ') }}</p>
+                    </div>
+                    <div class="date-price">
+                        <span><strong>Date:</strong> {{ ticket.showtime }}</span>
+                        <span><strong>Price:</strong> ₱{{ ticket.totalPrice }}</span>
+                    </div>
+                    <p class="payment-status">
+                        <strong>Status:</strong> {{ ticket.paymentStatus }}
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -231,26 +256,52 @@
 </div>
 
 <!-- Booking History -->
-<div v-if="view === 'BookingHistory'" class="ticket-container">
-    <h3>Expired Tickets</h3>
-    <div v-if="getExpiredTickets().length === 0">
-        <p>No expired tickets yet.</p>
+<div v-if="view === 'BookingHistory'">
+    <div v-if="getExpiredTickets().length === 0" class="ticket-container">
+		<p>No expired tickets yet.</p>
     </div>
     <div v-else>
         <div v-for="(ticket, index) in getExpiredTickets()" 
              :key="index" 
-             class="ticket-details">
-            <p><strong>Movie:</strong> {{ ticket.name }}</p>
-            <p><strong>Showtime:</strong> {{ ticket.showtime }}</p>
-            <p><strong>Seats:</strong> {{ ticket.seats.join(', ') }}</p>
-            <p><strong>Total Price:</strong> ₱{{ ticket.totalPrice }}</p>
-            <p><strong>Ticket Numbers:</strong> {{ ticket.ticketNumbers.join(', ') }}</p>
+             class="ticket">
+            <div class="ticket-content">
+                <!-- Left side: Logo -->
+                <div class="ticket-logo">
+                    <img src="@/assets/cinemania_black_logo.png" alt="Cinemania Logo" />
+                </div>
+
+                <!-- Right side: Ticket Details -->
+                <div class="ticket-details">
+                    <!-- Top Left -->
+                    <div>
+                        <p class="movie-title">{{ ticket.name }}</p>
+                        <p class="ticket-number">Ticket #: {{ ticket.ticketNumbers.join(', ') }}</p>
+                    </div>
+
+                    <!-- Top Right -->
+                    <div class="barcode"></div>
+
+                    <!-- Bottom Layout -->
+                    <div>
+                        <p class="seat-info"><strong>Seats:</strong> {{ ticket.seats.join(', ') }}</p>
+                    </div>
+                    <div class="date-price">
+                        <span><strong>Date:</strong> {{ ticket.showtime }}</span>
+                        <span><strong>Price:</strong> ₱{{ ticket.totalPrice }}</span>
+                    </div>
+                    <p class="payment-status">
+                        <strong>Status:</strong> {{ ticket.paymentStatus }}
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
+
     <button @click="setView('Ticket')" class="back-to-tickets-button">
         Back to Tickets
     </button>
 </div>
+
 
 
 
@@ -289,16 +340,14 @@ export default {
             maxPoints: 100,
             movieDetails: { name: '', showtime: '' },
             purchasedTickets: [], // Store all purchased tickets
-
+			paymentMethod: '', // Tracks the selected payment method
             showPopup: false, 
             showConfirmationPopup: false,
             showPaymentPopup: false,
             showSuccessPopup: false,
-
             // Movie, seat and payment information
             selectedSeats: [],
             totalPrice: 20,  // Sample price (in PHP)
-            paymentMethod: '',  // Holds the selected payment method
             purchasedSeats: [],
             ticketNumbers: [],
 			expiredTickets: [],
@@ -389,13 +438,19 @@ export default {
         return now > ticketDate;
     },
 
-    getActiveTickets() {
-        return this.purchasedTickets.filter(ticket => !this.isTicketExpired(ticket.showtime));
-    },
-	
-    getExpiredTickets() {
-        return this.purchasedTickets.filter(ticket => this.isTicketExpired(ticket.showtime));
-    },
+getActiveTickets() {
+    if (!this.purchasedTickets) return []; // Return an empty array if tickets are undefined
+    return this.purchasedTickets.filter(ticket => 
+        !this.isTicketExpired(ticket.showtime) && ticket.paymentStatus !== 'Expired'
+    );
+},
+
+getExpiredTickets() {
+    if (!this.purchasedTickets) return []; // Return an empty array if tickets are undefined
+    return this.purchasedTickets.filter(ticket => 
+        this.isTicketExpired(ticket.showtime) || ticket.paymentStatus === 'Expired'
+    );
+},
 
     // Remove expired tickets from the active view
     removeExpiredTickets() {
@@ -544,30 +599,41 @@ purchaseTickets() {
         this.showConfirmationPopup = false;
     },
 	
-    confirmPayment() {
-      if (!this.paymentMethod) {
+confirmPayment() {
+    if (!this.paymentMethod) {
         alert('Please select a payment method.');
         return;
-      }
+    }
+
+    const paymentStatus = this.paymentMethod === 'Cash'
+        ? 'Not Yet Paid'
+        : this.paymentMethod === 'Online Payment'
+        ? 'Already Paid'
+        : 'Voucher Ticket';
+    
     const ticket = {
         name: this.selectedMovie.title,
-        showtime: `${this.selectedMovie.date} ${this.selectedMovie.time}`, // Format: "November 13 3:00 PM"
+        showtime: `${this.selectedMovie.date} ${this.selectedMovie.time}`,
         seats: this.selectedSeats,
         totalPrice: this.totalPrice,
-        ticketNumbers: this.selectedSeats.map((seat, index) => `T${index + 1}`)
+        ticketNumbers: this.selectedSeats.map((seat, index) => `T${index + 1}`),
+        paymentMethod: this.paymentMethod,
+        paymentStatus: paymentStatus // Add status here
     };
-	
-		this.purchasedTickets.push(ticket);
-		this.selectedSeats.forEach(seatLabel => {
+
+    this.purchasedTickets.push(ticket);
+    this.selectedSeats.forEach(seatLabel => {
         const seat = this.getSeats(this.selectedMovie.id).find(s => s.label === seatLabel);
         if (seat) seat.status = 'booked';
     });
-    
-    this.selectedSeats = [];
+
+    this.paymentMethod = ''; // Reset payment method
+    this.selectedSeats = []; // Reset selected seats
     this.showPaymentPopup = false;
     this.showSuccessPopup = true;
 },
-	
+
+
     cancelPayment() {
         this.showPaymentPopup = false;
     },
@@ -1253,30 +1319,28 @@ startClock() {
 }
 
 
-/*TICKET*/
+/* TICKET */
 .ticket-content {
     display: none; /* Initially hidden until purchase */
-    background-color: #2e1a17;
-    padding: 15px;
-    margin-top: 20px;
+    background-color: #fff;
+    margin-top: 50px;
+	padding-left: 15px;
+	padding-left: 15px;
     border-radius: 10px;
     color: white;
     box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.3);
-	z-index: 9999;
+    z-index: 9999;
 }
 
 .ticket-container {
     text-align: center;
 }
 
-.ticket-container h3 {
-    font-size: 24px;
-    margin-bottom: 10px;
-}
 
 .ticket-container p {
-    font-size: 18px;
-    margin: 8px 0;
+    font-size: 20px;
+	margin-top: 20%;
+	
 }
 
 #ticket-confirm-btn {
@@ -1315,6 +1379,136 @@ startClock() {
     background-color: #0056b3;
 }
 
+
+/* TICKET HISTORY DESIGN */
+.ticket-details {
+    position: relative; /* For positioning child elements */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    color: black;
+}
+
+.ticket-details .movie-title {
+    font-weight: bold; /* Highlight the movie title */
+    font-size: 1.2em;
+    margin-bottom: 5px;
+	margin-top: 20px;
+}
+
+.ticket-details .ticket-number {
+    font-size: 0.9em;
+    color: #666; /* Subtle color for less emphasis */
+}
+
+.ticket-details .barcode {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 80px; /* Bigger barcode size */
+    height: 40px;
+    background: repeating-linear-gradient(
+        to right,
+        black 0,
+        black 5px,
+        white 5px,
+        white 10px
+    ); /* Simple barcode effect */
+}
+
+.ticket-details .seat-info,
+.ticket-details .date-price,
+.ticket-details .payment-status {
+    font-size: 0.9em;
+	margin-right: 20px;
+	margin-bottom: 20px;
+}
+
+.ticket-details .date-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ticket-details .payment-status {
+    text-align: right;
+    color: #555;
+    font-style: italic;
+}
+
+/* Ticket with Logo and Separator */
+.ticket-content {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ticket-logo {
+    flex: 0 0 100px; /* Fixed width for the logo */
+    margin-right: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.ticket-logo img {
+    width: 150%;
+    height: auto;
+    object-fit: contain;
+}
+
+.ticket-details {
+    flex: 1;
+    padding-left: 15px;
+    border-left: 3px dotted #000; /* Dotted line separator between logo and details */
+}
+
+.ticket-details .movie-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.ticket-details .ticket-number {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.ticket-details .seat-info,
+.ticket-details .date-price,
+.ticket-details .payment-status {
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+.ticket-details .date-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ticket-details .payment-status {
+    text-align: right;
+    color: #555;
+    font-style: italic;
+}
+
+/* For smaller screens or responsiveness */
+@media (max-width: 768px) {
+    .ticket-details {
+        padding: 15px;
+    }
+
+    .ticket-details .barcode {
+        width: 60px;
+        height: 30px;
+    }
+
+    .ticket-logo {
+        flex: 0 0 80px; /* Adjust logo size for smaller screens */
+    }
+}
 
 
 </style>
