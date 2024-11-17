@@ -309,6 +309,7 @@ export default {
             },
             // Theater location and other placeholders for now
             theaterLocation: '(To be added later)',  // Placeholder for theater location
+            iconPath: require('@/assets/ticket.png'),
             movies: {
                 Action: [
                     { id: 1, title: 'Venom', genre: 'Action', date: 'November 13', time: '3:00 PM', image:  require('@/assets/venom.jpg'), description: 'A thrilling tale.', trailer: require('@/assets/garfield2.mp4') },
@@ -572,7 +573,7 @@ purchaseTickets() {
     },
     closeSuccessPopup() {
         this.showSuccessPopup = false;
-        this.setView('Home'); // Reset to home or ticket view after success
+        this.setView('Ticket'); // Reset to home or ticket view after success
     },
 	
 
