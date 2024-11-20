@@ -302,21 +302,55 @@
     </button>
 </div>
 
-
-
-
-
             <!-- FEEDBACK -->
-            <div v-if="view === 'Feedback'" class="feedback-content">
-                <h2>Feedback</h2>
-                <form @submit.prevent="submitFeedback">
-                    <label for="feedback">Your Feedback:</label>
-                    <input type="text" id="feedback" v-model="feedback" required />
-                    <button type="submit">Submit</button>
-                </form>
-            </div>
+<div v-if="view === 'Feedback'" class="feedback-content">
+    <!-- Feedback Form -->
+    <div v-if="!feedbackSubmitted" class="feedback-form">
+		<img src="@/assets/cinemania_logo.png" alt="Cinemania Logo" class="logo" />
+        <h2>HOW WAS YOUR EXPERIENCE</h2>
+        <p>We value your feedback.</p>
+        <p>Please rate your overall experience</p>
+        
+        <!-- Star Rating -->
+        <div class="stars">
+            <span
+                v-for="star in 5"
+                :key="star"
+                :class="{ filled: star <= rating }"
+                @click="setRating(star)"
+            >★</span>
         </div>
+        
+        <label for="feedback" class="feedback-label">Tell us how we can improve</label>
+        <textarea
+            id="feedback"
+            v-model="feedback"
+            class="feedback-input"
+            required
+        ></textarea>
+        
+		<button type="submit" class="submit-btn" @click.prevent="submitFeedback">
+		Submit
+		</button>
+
     </div>
+    
+    <!-- Appreciation Message -->
+    <div v-else class="appreciation-message">
+		<img src="@/assets/cinemania_logo.png" alt="Cinemania Logo" class="logo" />
+        <div class="stars fixed">
+            <span
+                v-for="star in 5"
+                :key="star"
+                :class="{ filled: star <= rating }"
+            >★</span>
+        </div>
+        <p class="thank-you">Thank you for your feedback!</p>
+    </div>
+</div>
+
+	</div>
+</div>
 </template>
 
 <script>
@@ -336,6 +370,8 @@ export default {
             seats: [],
             filteredMoviesList: [],
             feedback: '',
+			rating: 0,
+			feedbackSubmitted: false,
             points: 100,
             maxPoints: 100,
             movieDetails: { name: '', showtime: '' },
@@ -642,6 +678,19 @@ confirmPayment() {
         this.setView('Ticket'); // Reset to home or ticket view after success
     },
 	
+    setRating(star) {
+            if (!this.feedbackSubmitted) {
+                this.rating = star; // Update the rating only if feedback is not submitted
+            }
+        },
+    submitFeedback() {
+            const percentage = (this.rating / 5) * 100; // Convert to percentage
+            console.log('Feedback:', this.feedback);
+            console.log('Rating (%):', percentage);
+            
+            // Mark feedback as submitted
+            this.feedbackSubmitted = true;
+    },
 
 startClock() {
     setInterval(() => {
@@ -1509,6 +1558,95 @@ startClock() {
         flex: 0 0 80px; /* Adjust logo size for smaller screens */
     }
 }
+
+.feedback-content {
+    max-width: 500px;
+    margin: auto;
+    color: #fff;
+    font-family: Arial, sans-serif;
+}
+
+.logo {
+    display: block;
+    margin: 0 auto 5px;
+	margin-top: 50px;
+    width: 150px;
+}
+
+.feedback-content h1 {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 1.5rem;
+}
+
+.feedback-content p {
+    text-align: center;
+    font-size: 1rem;
+}
+
+.stars {
+    text-align: center;
+    font-size: 4rem;
+}
+
+.stars span {
+    cursor: pointer;
+    color: #666;
+    transition: color 0.3s ease;
+
+}
+
+.stars span.filled {
+    color: #ffd700;
+	filter: drop-shadow(0 0 15px rgba(255, 223, 0, 0.8));
+}
+
+.feedback-label {
+    display: block;
+    margin-top: 20px;
+    font-size: 1rem;
+}
+
+.feedback-input {
+    width: 100%;
+    height: 100px;
+    margin-top: 10px;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #fff;
+    color: #000;
+}
+
+.submit-btn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background: #ffd700;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    float: right;
+    transition: background 0.3s ease;
+}
+
+.submit-btn:hover {
+    background: #ffc107;
+}
+
+.appreciation-message {
+    margin-top: 20px;
+}
+
+.thank-you {
+	margin-top: 20px;
+    font-size: 1.5rem;
+    color: #ffd700;
+    font-weight: bold;
+}
+
 
 
 </style>
