@@ -2,31 +2,31 @@
 
 <!-----DASHBOARD----------------------------------------------------------->
     <div id="app" class="dashboard">
-<button class="menu-btn" ref="menuBtn" @click="toggleSidebar">
+        <button class="menu-btn" @click="toggleSidebar">
             <div class="bar"></div>
             <div class="bar"></div>
             <div class="bar"></div>
         </button>
         
         <!-- Sidebar Navigation -->
-<div class="sidebar" ref="sidebar" :class="{ active: sidebarActive }">
+        <div class="sidebar" :class="{ active: sidebarActive }">
             <div class="profile-logo" @click="setView('Profile')">
                 <img src="./assets/cinemania_logo.png" alt="Profile Logo" />
             </div>
             <ul>
-        <li><a href="#" @click.prevent="setView('Profile')">Profile</a></li>
-        <li><a href="#home" @click.prevent="setView('Home')">Home</a></li>
-        <li><a href="#" @click.prevent="setView('Shows')">Now Showing</a></li>
-        <li><a href="#" @click.prevent="setView('Ticket')">Ticket</a></li>
-        <li><a href="#" @click.prevent="setView('Feedback')">Feedback</a></li>
+                <li><a href="#" @click="setView('Profile')">Profile</a></li>
+				<li><a href="#Home" @click="setView('Home')">Home</a></li>
+                <li><a href="#" @click="setView('Shows')">Now Showing</a></li>
+                <li><a href="#" @click="setView('Ticket')">Ticket</a></li>
+                <li><a href="#" @click="setView('Feedback')">Feedback</a></li>
             </ul>
-</div>
+        </div>
 <!---------------------------------------------------------------------------->
 
 <!-----CLOCK DISPLAY---------------------------------------------------------->
         <div class="clock">{{ currentTime }}</div>
 
-<div class="content">
+
             <!-- HOME -->
             <div v-if="view === 'Home'" class="home-content" id="Home">
                 <h1>Welcome, Jose Marie Chan!</h1>
@@ -355,7 +355,9 @@
 		<button type="submit" class="submit-btn" @click.prevent="submitFeedback">
 		Submit
 		</button>
-	</div>
+
+    </div>
+    
     <!-- Appreciation Message -->
     <div v-else class="appreciation-message">
 		<img src="@/assets/cinemania_logo.png" alt="Cinemania Logo" class="logo" />
@@ -367,9 +369,10 @@
             >★</span>
         </div>
         <p class="thank-you">Thank you for your feedback!</p>
-   </div>
+    </div>
 </div>
-</div>
+
+	</div>
 </div>
 </template>
 
@@ -490,53 +493,6 @@ export default {
             this.sidebarActive = !this.sidebarActive;
         },
 		
-		
-setView(viewName, movie = null) {
-    this.view = viewName;
-
-    if (viewName === 'Purchase' && movie) {
-        this.selectedMovie = { ...movie };
-        this.selectedSeats = [];
-        this.sidebarActive = false;
-        this.showConfirmationPopup = false;
-    }
-
-    // Clean up any expired tickets when viewing tickets or history
-    if (viewName === 'Ticket' || viewName === 'BookingHistory') {
-        // Update expired status for all tickets
-        this.purchasedTickets.forEach(ticket => {
-            ticket.expired = this.isTicketExpired(ticket.showtime);
-        });
-    }
-},
-
-	hideSidebar(event) {
-		const sidebar = this.$refs.sidebar;
-		const menuBtn = this.$refs.menuBtn;
-
-		if (this.sidebarActive && sidebar && !sidebar.contains(event.target) &&
-			menuBtn && !menuBtn.contains(event.target)) {
-			this.sidebarActive = false;
-		}
-	},
-
-
-
-        handleSearch() {
-            if (this.searchQuery.trim()) {
-                this.isSearching = true;
-                const query = this.searchQuery.toLowerCase();
-                this.filteredMoviesList = Object.values(this.movies).flat().filter(movie =>
-                    movie.title.toLowerCase().includes(query) ||
-                    movie.genre.toLowerCase().includes(query)
-                );
-            } else {
-                this.isSearching = false;
-                this.filteredMoviesList = [];
-            }
-        },
-
-		
 	isTicketExpired(showtime) {
         const now = new Date();
         // Convert "November 13, 3:00 PM" to a date object
@@ -568,6 +524,47 @@ getExpiredTickets() {
             return now <= ticketShowtime; // Keeps only non-expired tickets
         });
     },
+
+setView(viewName, movie = null) {
+    this.view = viewName;
+
+    if (viewName === 'Purchase' && movie) {
+        this.selectedMovie = { ...movie };
+        this.selectedSeats = [];
+        this.sidebarActive = false;
+        this.showConfirmationPopup = false;
+    }
+
+    // Clean up any expired tickets when viewing tickets or history
+    if (viewName === 'Ticket' || viewName === 'BookingHistory') {
+        // Update expired status for all tickets
+        this.purchasedTickets.forEach(ticket => {
+            ticket.expired = this.isTicketExpired(ticket.showtime);
+        });
+    }
+},
+
+        hideSidebar(event) {
+            if (this.sidebarActive && !this.$el.querySelector('.sidebar').contains(event.target) && 
+                !this.$el.querySelector('.menu-btn').contains(event.target)) {
+                this.sidebarActive = false;
+            }
+        },
+
+        handleSearch() {
+            if (this.searchQuery.trim()) {
+                this.isSearching = true;
+                const query = this.searchQuery.toLowerCase();
+                this.filteredMoviesList = Object.values(this.movies).flat().filter(movie =>
+                    movie.title.toLowerCase().includes(query) ||
+                    movie.genre.toLowerCase().includes(query)
+                );
+            } else {
+                this.isSearching = false;
+                this.filteredMoviesList = [];
+            }
+        },
+
         saveProfile() {
             // Correctly access birthdate and contactNo
             alert(`Profile updated:\nBirthdate: ${this.birthdate}\nContact No.: ${this.contactNo}`);
@@ -622,8 +619,6 @@ purchaseTickets() {
 
         this.selectedSeats = [];
         this.selectedMovie = { title: '', date: '', time: '' };
-        this.paymentMethod = '';
-        this.selectedOnlinePaymentMethod = '';
         this.showConfirmationPopup = true;
     } else {
         alert('Please select at least one seat to purchase.');
@@ -708,16 +703,14 @@ confirmPayment() {
         if (seat) seat.status = 'booked';
     });
 
-    // Clear selected data after successful payment
-    this.paymentMethod = ''; // Clear payment method
-    this.selectedOnlinePaymentMethod = ''; // Clear selected online payment method
-    this.selectedSeats = []; // Clear selected seats
-
-    // Hide the payment popup
+    // Clear data for new selection
+    this.paymentMethod = '';
+    this.selectedOnlinePaymentMethod = '';
     this.showPaymentPopup = false;
-
-    // Show success popup
     this.showSuccessPopup = true;
+
+    // Reset selected seats
+    this.selectedSeats = [];
 },
 
 
@@ -731,23 +724,15 @@ cancelPurchase() {
     this.showConfirmationPopup = false;
     this.selectedSeats = []; // Clear selected seats
     this.totalPrice = 0; // Reset total price
-	
 },
 cancelPayment() {
-    // Reset payment method and online payment selection
-    this.paymentMethod = ''; 
-    this.selectedOnlinePaymentMethod = ''; 
-
-    // Close the payment popup
     this.showPaymentPopup = false;
-
-    // Optionally reset other fields or go back to a different view
-    this.selectedSeats = []; // Clear selected seats if needed
+    this.paymentMethod = ''; // Reset payment method
 },
 
     closeSuccessPopup() {
-    this.showSuccessPopup = false;
-    this.setView('Ticket'); // Go back to the ticket view after success
+        this.showSuccessPopup = false;
+        this.setView('Ticket'); // Reset to home or ticket view after success
     },
 	
     setRating(star) {
@@ -783,12 +768,12 @@ startClock() {
 
     mounted() {
         this.startClock();
-		document.addEventListener('click', this.hideSidebar);
+		window.addEventListener('click', this.hideSidebar);
     },
 	
 	beforeUnmount() {
     // Clean up the event listener when the component is destroyed
-    document.removeEventListener('click', this.hideSidebar);
+    window.removeEventListener('click', this.hideSidebar);
 },
 };
 </script>
@@ -1103,7 +1088,7 @@ startClock() {
         overflow-y: auto; /* Allow scrolling if content exceeds viewport */
         min-height: 100vh; /* Ensure full height */
 	}
-		`
+		
 	.content h2 {
         margin-top: 40px;
         text-align: center;

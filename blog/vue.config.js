@@ -1,28 +1,26 @@
+const webpack = require('webpack');
+
 module.exports = {
-  transpileDependencies: true,
+  transpileDependencies: [],
+
   devServer: {
-    server: {
-      type: 'https',  // Ensure the server uses https
-    },
-    host: 'localhost',  // Ensure the correct host is used
-    port: 8080,  // Ensure the correct port is specified
-    hot: true,  // Enable Hot Module Replacement
-    client: {
-      webSocketURL: {
-        protocol: 'ws',  // Ensure WebSocket uses secure protocol
-        hostname: 'localhost',  // Localhost for dev environment
-        port: 8080,  // Ensure the correct WebSocket port
-      },
-    },
-  },devServer: {
     port: 8080,
-    https: false, // Disable HTTPS for testing
+    https: false,
     client: {
       webSocketURL: {
-        protocol: 'ws', // Use 'ws' for non-secure WebSocket
+        protocol: 'ws',
         hostname: 'localhost',
         port: 8080,
       },
     },
-  }
+  },
+
+  configureWebpack: {
+    plugins: [
+      new webpack.DefinePlugin({
+        // Define Vue feature flags here
+        __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: JSON.stringify(false),
+      }),
+    ],
+  },
 };
